@@ -18,6 +18,7 @@ const userSchema = new Schema<IUser>(
             minlength: 3
         },
 
+
         email: {
             type: String,
             required: true,

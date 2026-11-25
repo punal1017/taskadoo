@@ -24,3 +24,7 @@ export const loginSchema = z.object({
         .string()
         .min(1, "Password is required")
 });
+
+export const updateUserStatusSchema = z.object({
+    isActive: z.boolean()
+});
