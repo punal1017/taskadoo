@@ -1,36 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Taskadoo frontend
 
-## Getting Started
+Next.js App Router UI for the Taskadoo project and task management API.
 
-First, run the development server:
+## Run locally
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1. Start the backend from `backend/` with `npm run dev`. It uses port `3000` by default and requires the backend MongoDB and JWT environment variables.
+2. Start this app from `frontend/` with `npm run dev`. The frontend runs on `http://localhost:3001` to avoid the backend port.
+3. Sign in with an existing account or register a member account.
+
+The API client uses `http://localhost:3000/api` by default. To use another backend URL, set `NEXT_PUBLIC_API_BASE_URL` in `frontend/.env.local`, for example:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The frontend follows the existing API contracts. Team management is admin-only, and task status options match the backend (`TODO`, `IN_PROGRESS`, `COMPLETED`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run lint
+npm run build
+```
