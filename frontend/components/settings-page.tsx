@@ -81,9 +81,6 @@ export default function SettingsPage() {
           </Stack>
         </CardContent>
       </Card>
-      <Typography sx={{ maxWidth: 760, color: "text.secondary", fontSize: 11.5 }}>
-        Profile editing, password reset, and notification preferences are not exposed by the current backend API, so this page does not submit unsupported changes.
-      </Typography>
     </Stack>
   );
 }

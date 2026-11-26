@@ -3,7 +3,7 @@ import "./globals.css";
 import Providers from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "Taskadoo — Project workspace",
+  title: "Taskadoo",
   description: "A focused workspace for projects and team tasks.",
 };
 
