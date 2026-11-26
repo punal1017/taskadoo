@@ -51,6 +51,7 @@ import { getErrorMessage } from "@/lib/errors";
 import type { Project, Task, User } from "@/types/models";
 import { getId } from "@/types/models";
 import useGlobalQuery from "@/lib/use-global-query";
+import DateField from "@/components/date-field";
 
 type ProjectForm = {
   name: string;
@@ -323,8 +324,8 @@ export default function ProjectsPage() {
               <TextField label="Project name" required slotProps={{ htmlInput: { minLength: 3 } }} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
               <TextField label="Description" multiline minRows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
               <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <TextField label="Start date" type="date" slotProps={{ inputLabel: { shrink: true } }} value={form.startDate} onChange={(event) => setForm({ ...form, startDate: event.target.value })} fullWidth />
-                <TextField label="Due date" type="date" slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: form.startDate || undefined } }} value={form.dueDate} onChange={(event) => setForm({ ...form, dueDate: event.target.value })} fullWidth />
+                <DateField label="Start date" value={form.startDate} onChange={(startDate) => setForm({ ...form, startDate })} fullWidth />
+                <DateField label="Due date" value={form.dueDate} onChange={(dueDate) => setForm({ ...form, dueDate })} minDate={form.startDate} fullWidth />
               </Stack>
             </Stack>
           </DialogContent>

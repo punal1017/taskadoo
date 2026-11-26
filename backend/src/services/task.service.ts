@@ -80,7 +80,7 @@ const getTaskById = async (
 
     if (
         role !== "ADMIN" &&
-        task.assignedTo._id.toString() !== userId
+        (!task.assignedTo || task.assignedTo._id.toString() !== userId)
     ) {
         throw new ApiError(403, "You are not authorized to view this task");
     }
@@ -93,7 +93,39 @@ const updateTask = async (taskId: string, data: any) => {
         throw new ApiError(400, "Invalid task ID");
     }
 
-    const task = await Task.findByIdAndUpdate(
+    const existingTask = await Task.findById(taskId);
+
+    if (!existingTask) {
+        throw new ApiError(404, "Task not found");
+    }
+
+    if (data.assignedTo !== undefined && data.assignedTo !== null) {
+        if (!mongoose.Types.ObjectId.isValid(data.assignedTo)) {
+            throw new ApiError(400, "Invalid assigned user ID");
+        }
+
+        const user = await User.findById(data.assignedTo);
+
+        if (!user || user.role !== "MEMBER" || !user.isActive) {
+            throw new ApiError(404, "Active member not found");
+        }
+
+        const project = await Project.findById(existingTask.project);
+
+        if (!project) {
+            throw new ApiError(404, "Project not found");
+        }
+
+        const isMember = project.members.some(
+            id => id.toString() === data.assignedTo
+        );
+
+        if (!isMember) {
+            throw new ApiError(403, "User is not a member of this project");
+        }
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(
         taskId,
         data,
         {
@@ -102,11 +134,11 @@ const updateTask = async (taskId: string, data: any) => {
         }
     );
 
-    if (!task) {
+    if (!updatedTask) {
         throw new ApiError(404, "Task not found");
     }
 
-    return task;
+    return updatedTask;
 };
 
 const updateTaskStatus = async (
@@ -127,7 +159,7 @@ const updateTaskStatus = async (
 
     if (
         role !== "ADMIN" &&
-        task.assignedTo.toString() !== userId
+        (!task.assignedTo || task.assignedTo.toString() !== userId)
     ) {
         throw new ApiError(403, "You cannot update this task");
     }

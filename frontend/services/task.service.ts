@@ -22,7 +22,9 @@ export const createTask = async (input: TaskInput) => {
 
 export const updateTask = async (
   id: string,
-  input: Partial<Pick<Task, "title" | "description" | "priority" | "dueDate">>,
+  input: Partial<Pick<Task, "title" | "description" | "priority" | "dueDate">> & {
+    assignedTo?: string | null;
+  },
 ) => {
   const { data } = await apiClient.put<ApiEnvelope<Task>>(
     `/tasks/${id}`,

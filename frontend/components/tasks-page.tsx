@@ -50,6 +50,7 @@ import { getErrorMessage } from "@/lib/errors";
 import type { Project, Task, TaskPriority, TaskStatus, User } from "@/types/models";
 import { getId, getName } from "@/types/models";
 import useGlobalQuery from "@/lib/use-global-query";
+import DateField from "@/components/date-field";
 
 type TaskForm = {
   title: string;
@@ -147,6 +148,7 @@ export default function TasksPage() {
   const assignableUsers = users.filter((member) =>
     selectedProject?.members.some((projectMember) => getId(projectMember) === getId(member)),
   );
+  const currentAssigneeId = editing ? getId(editing.assignedTo) : "";
 
   const openCreate = () => {
     setEditing(null);
@@ -172,8 +174,8 @@ export default function TasksPage() {
     setForm({
       title: task.title,
       description: task.description ?? "",
-      projectId: "",
-      assignedTo: "",
+      projectId: getId(task.project),
+      assignedTo: getId(task.assignedTo),
       priority: task.priority,
       dueDate: task.dueDate?.slice(0, 10) ?? "",
     });
@@ -191,6 +193,10 @@ export default function TasksPage() {
           description: form.description.trim() || undefined,
           priority: form.priority,
           dueDate: form.dueDate || undefined,
+          assignedTo:
+            form.assignedTo === getId(editing.assignedTo)
+              ? undefined
+              : form.assignedTo || null,
         });
         setNoticeError(false);
         setNotice("Task updated.");
@@ -363,11 +369,33 @@ export default function TasksPage() {
                   </TextField>
                 </>
               )}
+              {editing && (
+                <TextField
+                  select
+                  label="Assign to"
+                  value={form.assignedTo}
+                  onChange={(event) => setForm({ ...form, assignedTo: event.target.value })}
+                  helperText="Choose an active member of this project, or leave the task unassigned."
+                >
+                  <MenuItem value="">Unassigned</MenuItem>
+                  {currentAssigneeId &&
+                    !assignableUsers.some((member) => getId(member) === currentAssigneeId) && (
+                      <MenuItem value={currentAssigneeId}>
+                        {getName(editing.assignedTo) || "Current assignee"}
+                      </MenuItem>
+                    )}
+                  {assignableUsers.map((member) => (
+                    <MenuItem key={getId(member)} value={getId(member)}>
+                      {member.name} · {member.email}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
               <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                 <TextField select label="Priority" value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value as TaskPriority })} fullWidth>
                   {(["LOW", "MEDIUM", "HIGH"] as TaskPriority[]).map((priority) => <MenuItem key={priority} value={priority}>{priority}</MenuItem>)}
                 </TextField>
-                <TextField label="Due date" type="date" slotProps={{ inputLabel: { shrink: true } }} value={form.dueDate} onChange={(event) => setForm({ ...form, dueDate: event.target.value })} fullWidth />
+                <DateField label="Due date" value={form.dueDate} onChange={(dueDate) => setForm({ ...form, dueDate })} fullWidth />
               </Stack>
             </Stack>
           </DialogContent>

@@ -8,26 +8,25 @@ import {
   Button,
   Card,
   CardContent,
+  Divider,
   Stack,
   Typography,
 } from "@mui/material";
-import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
-import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
 import AddIcon from "@mui/icons-material/AddRounded";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import { PickerDay, type PickerDayProps } from "@mui/x-date-pickers/PickerDay";
+import dayjs, { type Dayjs } from "dayjs";
 import { getTasks } from "@/services/task.service";
 import { getErrorMessage } from "@/lib/errors";
 import { ErrorState, LoadingState, PageHeader } from "@/components/shared";
 import type { Task } from "@/types/models";
 import { getName } from "@/types/models";
 
-const dayKey = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-
 export default function CalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [selectedDate, setSelectedDate] = useState<Dayjs>(() => dayjs());
 
   useEffect(() => {
     let active = true;
@@ -40,115 +39,101 @@ export default function CalendarPage() {
     };
   }, []);
 
-  const days = useMemo(() => {
-    const first = new Date(month.getFullYear(), month.getMonth(), 1);
-    const start = new Date(first);
-    start.setDate(first.getDate() - first.getDay());
-    return Array.from({ length: 42 }, (_, index) => {
-      const date = new Date(start);
-      date.setDate(start.getDate() + index);
-      return date;
-    });
-  }, [month]);
+  const selectedDateKey = selectedDate.format("YYYY-MM-DD");
+  const selectedTasks = useMemo(
+    () => tasks.filter((task) => task.dueDate?.slice(0, 10) === selectedDateKey),
+    [selectedDateKey, tasks],
+  );
+  const taskDates = useMemo(
+    () => new Set(tasks.flatMap((task) => (task.dueDate ? [task.dueDate.slice(0, 10)] : []))),
+    [tasks],
+  );
+  const CalendarDay = useMemo(
+    () =>
+      function CalendarDay(props: PickerDayProps) {
+        const hasTasks = taskDates.has(dayjs(props.day).format("YYYY-MM-DD"));
 
-  const tasksByDate = useMemo(() => {
-    const grouped = new Map<string, Task[]>();
-    for (const task of tasks) {
-      if (!task.dueDate) continue;
-      const key = dayKey(new Date(task.dueDate));
-      grouped.set(key, [...(grouped.get(key) ?? []), task]);
-    }
-    return grouped;
-  }, [tasks]);
+        return (
+          <PickerDay
+            {...props}
+            sx={
+              hasTasks
+                ? {
+                    bgcolor: "action.selected",
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      bottom: 4,
+                      left: "50%",
+                      width: 4,
+                      height: 4,
+                      borderRadius: "50%",
+                      bgcolor: props.selected ? "primary.contrastText" : "primary.main",
+                      transform: "translateX(-50%)",
+                    },
+                  }
+                : undefined
+            }
+          />
+        );
+      },
+    [taskDates],
+  );
 
   if (loading) return <LoadingState label="Loading calendar" />;
   if (error) return <ErrorState message={error} />;
-
-  const monthLabel = new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(month);
-  const todayKey = dayKey(new Date());
 
   return (
     <Stack spacing={2.5}>
       <PageHeader
         title="Calendar"
-        description="A month view of task due dates in your workspace."
+        description="Select a day to see tasks due in your workspace."
         action={<Button component={Link} href="/tasks" variant="contained" startIcon={<AddIcon />}>View tasks</Button>}
       />
       <Card>
         <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
-          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 2.5 }}>
-            <Typography sx={{ fontWeight: 650, fontSize: 16 }}>{monthLabel}</Typography>
-            <Stack direction="row" spacing={0.75}>
-              <Button size="small" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} startIcon={<ArrowBackIosNewRoundedIcon sx={{ fontSize: "13px !important" }} />}>Previous</Button>
-              <Button size="small" onClick={() => setMonth(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}>Today</Button>
-              <Button size="small" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} endIcon={<ArrowForwardIosRoundedIcon sx={{ fontSize: "13px !important" }} />}>Next</Button>
-            </Stack>
-          </Stack>
-
-          <Box sx={{ overflowX: "auto" }}>
-            <Box sx={{ minWidth: 700, display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", borderTop: "1px solid #E8EAF0", borderLeft: "1px solid #E8EAF0" }}>
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                <Box key={day} sx={{ py: 1, textAlign: "center", color: "text.secondary", fontSize: 11, fontWeight: 650, borderRight: "1px solid #E8EAF0", borderBottom: "1px solid #E8EAF0", bgcolor: "#FAFBFD" }}>
-                  {day}
-                </Box>
-              ))}
-              {days.map((date) => {
-                const dateTasks = tasksByDate.get(dayKey(date)) ?? [];
-                const inMonth = date.getMonth() === month.getMonth();
-                return (
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={{ xs: 1, md: 3 }}
+            divider={<Divider orientation="vertical" flexItem sx={{ display: { xs: "none", md: "block" } }} />}
+          >
+            <Box sx={{ width: { xs: "100%", md: 340 }, flexShrink: 0 }}>
+              <DateCalendar
+                value={selectedDate}
+                onChange={(date) => {
+                  if (date) setSelectedDate(date);
+                }}
+                slots={{ day: CalendarDay }}
+              />
+            </Box>
+            <Stack spacing={1.5} sx={{ flex: 1, minWidth: 0, py: { md: 2 } }}>
+              <Typography sx={{ fontWeight: 650, fontSize: 16 }}>
+                {selectedDate.format("dddd, MMMM D, YYYY")}
+              </Typography>
+              {selectedTasks.length ? (
+                selectedTasks.map((task) => (
                   <Box
-                    key={dayKey(date)}
+                    key={task._id}
                     sx={{
-                      minHeight: 112,
-                      p: 0.9,
-                      borderRight: "1px solid #E8EAF0",
-                      borderBottom: "1px solid #E8EAF0",
-                      bgcolor: inMonth ? "#fff" : "#FAFBFD",
+                      p: 1.5,
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 2,
                     }}
                   >
-                    <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 0.7 }}>
-                      <Typography
-                        sx={{
-                          width: 25,
-                          height: 25,
-                          display: "grid",
-                          placeItems: "center",
-                          borderRadius: "50%",
-                          fontSize: 11,
-                          fontWeight: dayKey(date) === todayKey ? 700 : 500,
-                          color: dayKey(date) === todayKey ? "#fff" : inMonth ? "text.primary" : "text.disabled",
-                          bgcolor: dayKey(date) === todayKey ? "primary.main" : "transparent",
-                        }}
-                      >
-                        {date.getDate()}
-                      </Typography>
-                    </Box>
-                    <Stack spacing={0.5}>
-                      {dateTasks.slice(0, 3).map((task) => (
-                        <Box
-                          key={task._id}
-                          title={`${task.title} · ${getName(task.project)}`}
-                          sx={{
-                            px: 0.65,
-                            py: 0.4,
-                            borderRadius: 1,
-                            overflow: "hidden",
-                            bgcolor: task.status === "COMPLETED" ? "#EAF7F1" : task.status === "IN_PROGRESS" ? "#EDF3FC" : "#F0F1F4",
-                            color: task.status === "COMPLETED" ? "#269B73" : task.status === "IN_PROGRESS" ? "#5385D8" : "#737B8C",
-                          }}
-                        >
-                          <Typography noWrap sx={{ fontSize: 10, fontWeight: 600 }}>{task.title}</Typography>
-                        </Box>
-                      ))}
-                      {dateTasks.length > 3 && (
-                        <Typography sx={{ pl: 0.5, color: "text.secondary", fontSize: 9.5 }}>+{dateTasks.length - 3} more</Typography>
-                      )}
-                    </Stack>
+                    <Typography sx={{ fontWeight: 600, fontSize: 13 }}>{task.title}</Typography>
+                    <Typography sx={{ mt: 0.5, color: "text.secondary", fontSize: 12 }}>
+                      {getName(task.project)} · {task.status.replace("_", " ").toLowerCase()}
+                    </Typography>
                   </Box>
-                );
-              })}
-            </Box>
-          </Box>
+                ))
+              ) : (
+                <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
+                  No tasks due on this day.
+                </Typography>
+              )}
+            </Stack>
+          </Stack>
         </CardContent>
       </Card>
       {tasks.every((task) => !task.dueDate) && (

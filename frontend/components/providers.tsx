@@ -3,6 +3,8 @@
 import { Suspense, createContext, useContext, useEffect, useMemo, useState } from "react";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import type { ReactNode } from "react";
 import type { AuthResult, User } from "@/types/models";
 import AppShell from "@/components/app-shell";
@@ -121,11 +123,13 @@ export default function Providers({ children }: { children: ReactNode }) {
     <AppRouterCacheProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <AuthContext.Provider value={value}>
-          <Suspense fallback={null}>
-            <AppShell>{children}</AppShell>
-          </Suspense>
-        </AuthContext.Provider>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <AuthContext.Provider value={value}>
+            <Suspense fallback={null}>
+              <AppShell>{children}</AppShell>
+            </Suspense>
+          </AuthContext.Provider>
+        </LocalizationProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>
   );

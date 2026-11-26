@@ -29,7 +29,7 @@ export interface Task {
   title: string;
   description?: string;
   project: Project | string;
-  assignedTo: User | string;
+  assignedTo: User | string | null;
   assignedBy?: User | string;
   status: TaskStatus;
   priority: TaskPriority;
@@ -57,9 +57,11 @@ export interface ApiEnvelope<T> {
   data: T;
 }
 
-export const getId = (value: string | { _id?: string; id?: string }): string =>
-  typeof value === "string" ? value : value._id ?? value.id ?? "";
+export const getId = (
+  value: string | { _id?: string; id?: string } | null | undefined,
+): string =>
+  typeof value === "string" ? value : value?._id ?? value?.id ?? "";
 
 export const getName = (
-  value: string | { name?: string } | undefined,
+  value: string | { name?: string } | null | undefined,
 ): string => (typeof value === "string" ? "" : value?.name ?? "");

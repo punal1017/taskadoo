@@ -22,6 +22,8 @@ export const updateTaskSchema = z.object({
 
     description: z.string().optional(),
 
+    assignedTo: z.string().min(1, "Assigned user ID cannot be empty").nullable().optional(),
+
     priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
 
     dueDate: dateSchema.optional()
